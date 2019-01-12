@@ -5,6 +5,12 @@ include(CheckCXXCompilerFlag)
 #Let's build shared libs (*.so)
 OPTION (BUILD_SHARED_LIBS "Build shared libraries." ON)
 
+#Make sure proper macros are used to export symbols
+add_definitions(-DASTROLIB_LIBRARY=1)
+
+#Create an option for annoying debug code...
+OPTION (ENABLE_DEBUG_CODE "Enable lots of annoying console output..." OFF)
+
 #Detect compiler and act accordingly
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     option(CMAKE_CXX_VERBOSE "Verbose compilation output?" OFF)
@@ -38,6 +44,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" ST
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
       # using Intel C++
 endif()
+
+find_package(Qt5 REQUIRED COMPONENTS Core)
 
 #find_package(package_name version REQUIRED)
 #EXAMPLE! ->
