@@ -40,7 +40,7 @@ if (ENABLE_DEBUG_CODE)
 endif()
 
 # FORCE MOC to run on the headers/*.h files... without this it's just undefined references to everything in those headers.
-qt5_wrap_cpp(astrolib_MOCEXHDRS ${cryptapi_INSTALL_HEADERS})
+qt5_wrap_cpp(astrolib_MOCEXHDRS ${astrolib_INSTALL_HEADERS})
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
 	execute_process(
