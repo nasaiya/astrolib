@@ -1,4 +1,7 @@
 .kdev4
 build
 *.kate-swp
+<<<<<<< HEAD
 AstroLib.kdev4
+=======
+>>>>>>> 65dc98e11baed5b4be74b8bbe0901d16177e346d
