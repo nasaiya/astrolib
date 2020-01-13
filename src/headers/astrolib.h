@@ -53,14 +53,16 @@ namespace AL {
   
   typedef struct {
     elements_t element;
-    QDateTime begin;
-    QDateTime end;
+    QTime begin;
+    QTime end;
+    QDate date;
   } ElementalTide;
   
   typedef struct {
     planets_t planet;
-    QDateTime begin;
-    QDateTime end;
+    QTime begin;
+    QTime end;
+    QDate date;
   } PlanetaryHour;
   
   typedef struct {
@@ -71,22 +73,31 @@ namespace AL {
     int minutes;
     bool retrograde;
   } PlanetPosition; 
-}
-
-// return void of course start and end times for day.
-//QMap<QDateTime, voids_t> voids(const QDate &day);
-ASTROLIB_EXPORT QList<QPair<QDateTime,QDateTime>> al_voids(const QDate &day);
+  
+  ASTROLIB_EXPORT void init(); //const QString &tz, const QString &lat, const QString &longitude
+  
+  // return void of course start and end times for day.
+  ASTROLIB_EXPORT QList<QPair<QDateTime,QDateTime>> voids(const QDate &day);
 
 // calculate elemental tides
-QList<AL::ElementalTide> al_elementalTides(const QDateTime &from, const QDateTime &to);
-AL::ElementalTide al_elementalTide(const QDateTime &dateTime);
+//ASTROLIB_EXPORT QList<AL::ElementalTide> al_elementalTides(const QDateTime &from, const QDateTime &to);
+//ASTROLIB_EXPORT AL::ElementalTide al_elementalTide(const QDateTime &dateTime);
 
 // calculate planetary hours
-QList<AL::PlanetaryHour> al_planetaryHours(const QDateTime &from, const QDateTime &to);
-AL::PlanetaryHour al_planetaryHour(const QDateTime &dateTime);
+//ASTROLIB_EXPORT QList<AL::PlanetaryHour> al_planetaryHours(const QDateTime &from, const QDateTime &to);
+//ASTROLIB_EXPORT AL::PlanetaryHour al_planetaryHour(const QDateTime &dateTime);
 
 // return position of every availiable planet/etc in zodiac.
-QMap<AL::planets_t,AL::PlanetPosition> al_zodiacPositions(const QDateTime &dateTime);
+//ASTROLIB_EXPORT QMap<AL::planets_t,AL::PlanetPosition> al_zodiacPositions(const QDateTime &dateTime);
 
+  ASTROLIB_EXPORT QPair<QDateTime, QDateTime> riseSet(const QDate& date);
+  ASTROLIB_EXPORT QList<QPair<QDateTime, QDateTime>> riseSet(const QDate& from, const QDate& to);
+
+// internal functions/vars
+  // return output as list of lines, no processing done.
+  QStringList astrolog_getVoids(const QDate &day);
+
+  
+}
 
 #endif

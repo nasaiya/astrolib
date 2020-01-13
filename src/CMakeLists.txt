@@ -9,8 +9,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers)
-include_directories(/usr/include/swiss-ephemeris-2.07.01)
-
+include_directories(${CMAKE_SOURCE_DIR}/libswe/include)
+link_directories(${CMAKE_SOURCE_DIR}/libswe/lib)
 
 #Add any source files that will create a single library
 set(astrolib_LIB

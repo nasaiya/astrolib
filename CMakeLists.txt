@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.0.0)
 project(astrolib CXX)
 include(CheckCXXCompilerFlag)
 
+# build libswe
+include(ExternalProject)
+ExternalProject_Add(
+  libswe
+  SOURCE_DIR ${CMAKE_SOURCE_DIR}/libswe/src
+  #CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/lib/libantlr3c-3.1.3/configure --prefix=${CMAKE_CURRENT_SOURCE_DIR}/lib/libantlr3c-3.1.3
+  PREFIX ${CMAKE_SOURCE_DIR}/libswe/
+  BUILD_COMMAND make && make libswe.so
+  BUILD_IN_SOURCE 1
+)
+
 #Let's build shared libs (*.so)
 OPTION (BUILD_SHARED_LIBS "Build shared libraries." ON)
 
