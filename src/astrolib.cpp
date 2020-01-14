@@ -1,6 +1,6 @@
 #include "headers/astrolib.h"
-#include "sweodef.h"
-#include "swephexp.h"
+#include <sweodef.h>
+#include <swephexp.h>
 
 #include <QProcess>
 #include <QTimeZone>
@@ -232,8 +232,7 @@ namespace AL {
       }
       
       swe_revjul(trise, gregflag, &year, &month, &day, &rhour);
-      
-      
+    
       rsmi = SE_CALC_SET;
       return_code = swe_rise_trans(trise, ipl, starname, epheflag, rsmi, geopos, datm[0], datm[1], &tset, serr);
       
@@ -243,7 +242,7 @@ namespace AL {
       }
       
       swe_revjul(tset, gregflag, &year, &month, &day, &shour);
-     // printf("Day length: %f\tJulian days\nDay length: %f\tHours\n\n", (tset - trise), (tset - trise) * 24 );
+      // printf("Day length: %f\tJulian days\nDay length: %f\tHours\n\n", (tset - trise), (tset - trise) * 24 );
       
       // Turn Julian day into first UTC then localtime
       int iyear_utc;
@@ -252,34 +251,22 @@ namespace AL {
       int ihour_utc;
       int imin_utc;
       double dsec_utc;
-      
-      double d_timezone = -7;
-      int iyear;
-      int imonth;
-      int iday;
-      int ihour;
-      int imin;
-      double dsec;
-      
       QPair<QDateTime,QDateTime> pair;
       
+      // calculate sunrise
       swe_jdet_to_utc(trise, gregflag, &iyear_utc, &imonth_utc, &iday_utc, &ihour_utc, &imin_utc, &dsec_utc);
-     // printf("UTC   sunrise : date=%i/%i/%i, time=%02i:%02i:%05.2f\n", iyear_utc, imonth_utc, iday_utc, ihour_utc, imin_utc, dsec_utc);
+      //printf("UTC   sunrise : date=%i/%i/%i, time=%02i:%02i:%05.2f\n", iyear_utc, imonth_utc, iday_utc, ihour_utc, imin_utc, dsec_utc);
+      QDateTime dtrise(QDate(iyear_utc,imonth_utc,iday_utc),QTime(ihour_utc,imin_utc,dsec_utc), Qt::UTC);
       
-      swe_utc_time_zone(iyear_utc, imonth_utc, iday_utc, ihour_utc, imin_utc, dsec_utc, -d_timezone, &iyear, &imonth, &iday, &ihour, &imin, &dsec);
-     // printf("Local sunrise  : date=%i/%i/%i, time=%02i:%02i:%05.2f\n\n", iyear, imonth, iday, ihour, imin, dsec);
-      pair.first.setDate(QDate(iyear,imonth,iday));
-      pair.first.setTime(QTime(ihour,imin,dsec));
-      
+      // calculate sunset
       swe_jdet_to_utc(tset, gregflag, &iyear_utc, &imonth_utc, &iday_utc, &ihour_utc, &imin_utc, &dsec_utc);
-    //  printf("UTC   sunset  : date=%i/%i/%i, time=%02i:%02i:%05.2f\n", iyear_utc, imonth_utc, iday_utc, ihour_utc, imin_utc, dsec_utc);
+      // printf("UTC   sunset  : date=%i/%i/%i, time=%02i:%02i:%05.2f\n", iyear_utc, imonth_utc, iday_utc, ihour_utc, imin_utc, dsec_utc);
+      QDateTime dtset(QDate(iyear_utc,imonth_utc,iday_utc),QTime(ihour_utc,imin_utc,dsec_utc), Qt::UTC);
       
-      swe_utc_time_zone(iyear_utc, imonth_utc, iday_utc, ihour_utc, imin_utc, dsec_utc, -d_timezone, &iyear, &imonth, &iday, &ihour, &imin, &dsec);
-    //  printf("Local sunset  : date=%i/%i/%i, time=%02i:%02i:%05.2f\n\n", iyear, imonth, iday, ihour, imin, dsec);
-     
-      pair.second.setDate(QDate(iyear,imonth,iday));
-      pair.second.setTime(QTime(ihour,imin,dsec));
-      // adjust for DST
+      // convert to localtime
+      pair.first = dtrise.toLocalTime();
+      pair.second = dtset.toLocalTime();
+      // adjust for DST if applicable
       if (pair.first.isDaylightTime()) pair.first = pair.first.addSecs(60*60*1);
       if (pair.second.isDaylightTime()) pair.second = pair.second.addSecs(60*60*1);
       dlist << pair;
