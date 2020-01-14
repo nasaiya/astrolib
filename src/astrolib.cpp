@@ -6,12 +6,21 @@
 #include <QTimeZone>
 #include <QSettings>
 
+/**
+ * this is currently dependant on QSettings having the following values set in the calling program:
+ * "locale/lat" // in the format astrolog expects
+ * "locale/long" // in the format astrolog expects
+ * "locale/tz" // in the format astrolog expects
+ * "paths/astrolog" // path to astrolog binary
+ * "paths/ephem" // path to sweph ephemeris files
+ */
 namespace AL {
   QHash<QString,planets_t> alPlanetsHash;
   QHash<QString,zodiac_t> alZodiacHash;
   
   void init() {
     QSettings settings;
+    
     // sigh...........
     char* cstr;
     cstr = new char [settings.value("paths/ephem").toString().toStdString().size()+1];
@@ -70,7 +79,7 @@ namespace AL {
           }
           --j;
         }
-        int cnt = 0; // how far back in days to serach.
+        int cnt = 0; // how far back in days to search.
         while (!found) {
           // search through previous days until we find the start.
           cnt++;
