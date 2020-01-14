@@ -9,8 +9,11 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers)
-include_directories(${CMAKE_SOURCE_DIR}/libswe/include)
-link_directories(${CMAKE_SOURCE_DIR}/libswe/lib)
+# HACK to find libswe... why isn't found by default??
+include_directories(/usr/include/libswe-2.08)
+link_directories(/usr/lib64/libswe-2.08)
+#include_directories(${CMAKE_SOURCE_DIR}/libswe/include)
+#link_directories(${CMAKE_SOURCE_DIR}/libswe/lib)
 
 #Add any source files that will create a single library
 set(astrolib_LIB
