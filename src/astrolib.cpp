@@ -7,19 +7,22 @@
 #include <QSettings>
 
 namespace AL {
-
+  QHash<QString,planets_t> alPlanetsHash;
+  QHash<QString,zodiac_t> alZodiacHash;
+  
   void init() {
-    char path[] = "/home/spagyricus/projects/AstroLib/libswe/ephem";
-    swe_set_ephe_path(path);
-    
     QSettings settings;
-    debug(settings.value("paths/astrolog").toString());
+    // sigh...........
+    char* cstr;
+    cstr = new char [settings.value("paths/ephem").toString().toStdString().size()+1];
+    strcpy( cstr, settings.value("paths/ephem").toString().toStdString().c_str() );
+    swe_set_ephe_path(cstr);
+    
    /* alTz = tz;
     alLat = lat;
     alLong = longitude;*/
-    
     // build hashes
-  /*  alPlanetsHash["Satu"] = Saturn;
+    alPlanetsHash["Satu"] = Saturn;
     alPlanetsHash["Jupi"] = Jupiter;
     alPlanetsHash["Mars"] = Mars;
     alPlanetsHash["Sun"] = Sun;
@@ -29,7 +32,7 @@ namespace AL {
     alPlanetsHash["Uran"] = Uranus;
     alPlanetsHash["Nept"] = Neptune;
     alPlanetsHash["Plut"] = Pluto;
-    
+   
     alZodiacHash["Ari"] = Aries;
     alZodiacHash["Tau"] = Taurus;
     alZodiacHash["Gem"] = Gemini;
@@ -41,7 +44,8 @@ namespace AL {
     alZodiacHash["Sag"] = Sagittarius;
     alZodiacHash["Cap"] = Capricorn;
     alZodiacHash["Aqu"] = Aquarius;
-    alZodiacHash["Pis"] = Pisces;*/
+    alZodiacHash["Pis"] = Pisces;  
+    
   }
   
   QList<QPair<QDateTime,QDateTime>> voids(const QDate &day)
@@ -167,6 +171,334 @@ namespace AL {
     return theVoids;
   }
   
+  QMap< planets_t, PlanetPosition > zodiacPositions ( const QDateTime &dateTime )
+  {
+    QStringList lines = astrolog_getChart(dateTime);
+    // chart begins at line three
+    lines.removeFirst();
+    lines.removeFirst();
+    lines.removeFirst();
+    QMap< planets_t, PlanetPosition > map;
+    for (QString line : lines) {
+      QStringList cols = line.split(QRegExp("\\s+"));
+      /*
+       *    Sun :  8Vir17   - 0:00' (-) [10th house] [-] +0.967  -  House cusp  1: 13Sco25
+       *    Moon:  8Tau55   - 5:11' (e) [ 6th house] [-] ______  -  House cusp  2: 12Sag46
+       *    Merc: 21Leo13   + 0:40' (d) [ 9th house] [F] +1.455  -  House cusp  3: 16Cap38
+       *    Venu: 23Lib18   - 3:11' (R) [12th house] [e] +0.832  -  House cusp  4: 22Aqu26
+       *    Mars: 28Cap44   - 5:41' (e) [ 3rd house] [-] +0.057  -  House cusp  5: 24Pis56
+       *    Jupi: 17Sco12   + 0:51' (-) [ 1st house] [-] +0.136  -  House cusp  6: 21Ari39
+       *    Satu:  2Cap31 R + 0:43' (R) [ 2nd house] [-] -0.009  -  House cusp  7: 13Tau25
+       *    Uran:  2Tau22 R - 0:33' (d) [ 6th house] [-] -0.019  -  House cusp  8: 12Gem46
+       *    Nept: 15Pis16 R - 1:00' (R) [ 4th house] [-] -0.027  -  House cusp  9: 16Can38
+       *    Plut: 18Cap55 R + 0:05' (-) [ 3rd house] [-] -0.014  -  House cusp 10: 22Leo26
+       *    Chir:  1Ari54 R + 3:33' (-) [ 5th house] [-] -0.041  -  House cusp 11: 24Vir56
+       *    Cere: 28Vir22   + 7:34' (-) [11th house] [-] +0.449  -  House cusp 12: 21Lib39
+       *    Pall:  0Vir11   -12:21' (R) [10th house] [e] +0.527
+       *    Juno: 29Tau59   -10:14' (-) [ 7th house] [R] +0.342     Car Fix Mut TOT   +: 7
+       *    Vest:  2Cap28   - 2:08' (-) [ 2nd house] [F] +0.156  Fir  1   3   0   4   -:15
+       *    Node:  4Leo03 R + 0:00' (F) [ 9th house] [-] ______  Ear  4   3   3  10   M: 9
+       *    S.No:  4Aqu03 R + 0:00' (F) [ 3rd house] [-] ______  Air  1   1   1   3   N:11
+       *    Fort: 14Can03   _______ (-) [ 8th house] [-] ______  Wat  1   3   1   5   A:11
+       *    Vert: 26Gem06   _______ (-) [ 8th house] [-] ______  TOT  7  10   5  22   D: 9
+       *    East: 27Sco04   _______ (-) [ 1st house] [R] ______                       <:12*/
+      
+      PlanetPosition pp;
+      pp.dateTime = dateTime;
+      
+      // planet/object
+      int c=0; // column
+      QString planet = cols.at(c);
+      planet.remove(":");
+      if (!alPlanetsHash.contains(planet))
+        continue; // not all reported planets/objects are yet handled.
+        
+        pp.planet = alPlanetsHash.value(planet);
+      
+      // sign + degrees,minutes
+      c++;
+      if (cols.at(c) == ":") c++; // sun does this...
+      QRegExp rx;
+      rx.setPattern("(\\d+)(\\D{3})(\\d+)");
+      assert(cols.at(c).contains(rx));
+      pp.degrees = rx.cap(1).toInt();
+      pp.sign = alZodiacHash.value(rx.cap(2));
+      pp.minutes = rx.cap(3).toInt();
+      
+      // retrograde
+      c++;
+      rx.setPattern("(R|\\+|\\-|_)");
+      assert(cols.at(c).contains(rx));
+      if (rx.cap(1) == "R")
+        pp.retrograde = true;
+      else
+        pp.retrograde = false;
+      
+      map.insert(pp.planet, pp);
+      debug(QString("pl %1 dg %2 sign %3 min %4 ret %5")
+      .arg(static_cast<int>(pp.planet))
+      .arg(pp.degrees)
+      .arg(static_cast<int>(pp.sign))
+      .arg(pp.minutes)
+      .arg(pp.retrograde));
+    } 
+    
+    return map;
+  }
+  
+  QList<ElementalTide> elementalTides(const QDateTime& from, const QDateTime& to)
+  {
+    QList<ElementalTide> list;
+    // get rise set time including 1 previous next couple days because we need sunrise from next day for night tides.
+    QList<QPair<QDateTime, QDateTime>> pairs = riseSet(from.date().addDays(-1), to.date().addDays(2));
+    
+    /// get first tide, then count forward to end tide spanning days if necessary, adding each to list.  
+    QDateTime prevRise, prevSet, rise, set, nextRise, nextSet, start, end, current;
+    int daycnt = 0;
+    int tideNum = 0;
+    double tideLength;
+    bool daytime = false;
+    elements_t element = Element_Null; // current element
+    ElementalTide tide;
+    
+    bool finished = false;
+    bool haveFirst = false;
+    current = from;
+    while (!finished) {
+      if (!haveFirst) {
+        // hunt down the first one...
+        prevRise = pairs.at(daycnt).first;
+        prevSet = pairs.at(daycnt).second;
+        rise = pairs.at(daycnt+1).first;
+        set = pairs.at(daycnt+1).second;
+        nextRise = pairs.at(daycnt+2).first;
+        
+        // adjust for DST
+        if (prevRise.isDaylightTime()) prevRise = prevRise.addSecs(60*60*1);
+        if (prevSet.isDaylightTime()) prevSet = prevSet.addSecs(60*60*1);
+        if (rise.isDaylightTime()) rise = rise.addSecs(60*60*1);
+        if (set.isDaylightTime()) set = set.addSecs(60*60*1);
+        if (nextRise.isDaylightTime()) nextRise = nextRise.addSecs(60*60*1);
+        
+        // now find it
+        if (current > prevRise && current < prevSet) {
+          daytime = true;
+          start = prevRise;
+          end = prevSet;
+        }
+        else if (current > prevSet && current < rise) {
+          daytime = false;
+          start = prevSet;
+          end = rise;
+        }
+        else if (current > rise && current < set) {
+          daytime = true;
+          start = rise;
+          end = set;
+        }
+        else if (current > set && current < nextRise) {
+          daytime = false;
+          start = set;
+          end = nextRise;
+        }
+        else {
+          err("This probably isn't possible...");
+          assert(false);
+        }
+        
+        haveFirst = true;
+      }
+      
+      tideLength = ((double)start.secsTo(end) / 60) / 30;
+      //  tideNum = (start.secsTo(current) / 60) / tideLength;
+      debug(QString("tidenum: %1").arg(tideNum));
+      switch (tideNum % 5) {
+        case 0:
+          element = Spirit;
+          debug("spirit");
+          break;
+        case 1:
+          element = Air;
+          debug("air");
+          break;
+        case 2:
+          element = Fire;
+          debug("fire");
+          break;
+        case 3:
+          element = Water;
+          debug("water");
+          break;
+        case 4:
+          element = Earth;
+          debug("earth");
+          break;
+        default:
+          element = Element_Null;
+      };
+      
+      tide.begin = start.time();
+      tide.begin = tide.begin.addSecs(tideNum*tideLength*60);
+      tide.end = tide.begin.addSecs(tideLength*60);  
+      tide.element = element;
+      
+      if (tide.end > from.time()) {
+        debug(tide.begin.toString());
+        debug(tide.end.toString());
+        list << tide; 
+      }
+      
+      if (tide.end >= to.time()) {
+        finished=true;
+        break; // just break out of loop here and don't bother with pointless calculations.
+      }
+      
+      // still haven't got to "to" yet, so go on to the next tide
+      ++tideNum;
+      if (tideNum >= 30 ) {
+        tideNum = 0;
+        daytime = !daytime;
+        if (daytime) { 
+          // rolled over into the next day!
+          daycnt++;
+          
+          start = pairs.at(daycnt).first;
+          end = pairs.at(daycnt).second;
+        }
+        else {
+          start = pairs.at(daycnt).second;
+          end = pairs.at(daycnt+1).first;
+        }
+        // adjust for DST
+        if (start.isDaylightTime()) start = start.addSecs(60*60*1);
+        if (end.isDaylightTime()) end = end.addSecs(60*60*1);
+        // recalculate tide length
+        tideLength = ((double)start.secsTo(end) / 60) / 30;
+      }
+    }
+    
+    return list;
+  }
+  
+  ElementalTide elementalTide(const QDateTime& dateTime)
+  {
+    return elementalTides(dateTime, dateTime).first();
+  }
+  
+  PlanetaryHour planetaryHour(const QDateTime& dateTime)
+  {
+    return planetaryHours(dateTime, dateTime).first();
+  }
+  
+  QList<PlanetaryHour> planetaryHours(const QDateTime& from, const QDateTime& to)
+  {
+    QList<PlanetaryHour> list;
+    /******** FIXME lost db table... need to redo this
+    // get rise set time including 1 previous next couple days because we need sunrise from next day for night hours.
+    QList<QPair<QDateTime, QDateTime>> pairs = riseSet(from.date().addDays(-1), to.date().addDays(2));
+    
+    /// get first hour, then count forward to end hour spanning days if necessary, adding each to list.  
+    QDateTime prevRise, prevSet, rise, set, nextRise, nextSet, start, end, current;
+    int daycnt = 0;
+    int dow;
+    double hourLength;
+    bool daytime = false;
+    int hour; // planetary hour 1-12 (day or night)
+    PlanetaryHour phour;
+    
+    bool finished = false;
+    bool haveFirst = false;
+    current = from;
+    while (!finished) {
+      if (!haveFirst) {
+        // hunt down the first one...
+        prevRise = pairs.at(daycnt).first;
+        prevSet = pairs.at(daycnt).second;
+        rise = pairs.at(daycnt+1).first;
+        set = pairs.at(daycnt+1).second;
+        nextRise = pairs.at(daycnt+2).first;
+        
+        // adjust for DST
+        if (prevRise.isDaylightTime()) prevRise = prevRise.addSecs(60*60*1);
+        if (prevSet.isDaylightTime()) prevSet = prevSet.addSecs(60*60*1);
+        
+        if (nextRise.isDaylightTime()) nextRise = nextRise.addSecs(60*60*1);
+        
+        // now find it
+        if (current > prevRise && current < prevSet) {
+          daytime = true;
+          start = prevRise;
+          end = prevSet;
+          dow = prevRise.date().dayOfWeek();
+        }
+        else if (current > prevSet && current < rise) {
+          daytime = false;
+          start = prevSet;
+          end = rise;
+          dow = prevRise.date().dayOfWeek();
+        }
+        else if (current > rise && current < set) {
+          daytime = true;
+          start = rise;
+          end = set;
+          dow = rise.date().dayOfWeek();
+        }
+        else if (current > set && current < nextRise) {
+          daytime = false;
+          start = set;
+          end = nextRise;
+          dow = rise.date().dayOfWeek();
+        }
+        else {
+          err("This probably isn't possible...");
+          assert(false);
+        }
+        
+        hourLength = ((double)start.secsTo(end) / 60) / 12;
+        hour = (start.secsTo(current) / 60) / hourLength;
+        haveFirst = true;
+      }
+      
+      phour.begin = start.time();
+      phour.begin = phour.begin.addSecs(hour*hourLength*60);
+      phour.end = phour.begin.addSecs(hourLength*60);        
+      phour.planet = DB.planetForHour(dow, daytime, hour+1);
+      list << phour; 
+      
+      if (phour.end >= to.time()) {
+        finished=true;
+        break; // just break out of loop here and don't bother with pointless calculations.
+      }
+      
+      // still haven't got to "to" yet, so go on to the next hour
+      ++hour;
+      if (hour > 11 ) {
+        hour = 0;
+        daytime = !daytime;
+        if (daytime) { 
+          // rolled over into the next day!
+          daycnt++;
+          
+          start = pairs.at(daycnt).first;
+          end = pairs.at(daycnt).second;
+        }
+        else {
+          start = pairs.at(daycnt).second;
+          end = pairs.at(daycnt+1).first;
+        }
+        // adjust for DST
+        if (start.isDaylightTime()) start = start.addSecs(60*60*1);
+        if (end.isDaylightTime()) end = end.addSecs(60*60*1);
+        // always use sunrise of current day for dayOfWeek
+        dow = pairs.at(daycnt).first.date().dayOfWeek(); 
+        // recalculate hour length
+        hourLength = ((double)start.secsTo(end) / 60) / 12;
+      }
+    }
+    */
+    return list;
+  }
+  
   QPair<QDateTime, QDateTime> riseSet(const QDate& date)
   {
     return riseSet(date, date).first();
@@ -274,6 +606,7 @@ namespace AL {
       cdate = cdate.addDays(1);
     }
     
+    swe_close();
     return dlist;
   }
   

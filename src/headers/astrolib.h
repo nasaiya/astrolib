@@ -79,24 +79,25 @@ namespace AL {
   // return void of course start and end times for day.
   ASTROLIB_EXPORT QList<QPair<QDateTime,QDateTime>> voids(const QDate &day);
 
-// calculate elemental tides
-//ASTROLIB_EXPORT QList<AL::ElementalTide> al_elementalTides(const QDateTime &from, const QDateTime &to);
-//ASTROLIB_EXPORT AL::ElementalTide al_elementalTide(const QDateTime &dateTime);
+  // calculate elemental tides
+  ASTROLIB_EXPORT QList<AL::ElementalTide> elementalTides(const QDateTime &from, const QDateTime &to);
+  ASTROLIB_EXPORT AL::ElementalTide elementalTide(const QDateTime &dateTime);
 
-// calculate planetary hours
-//ASTROLIB_EXPORT QList<AL::PlanetaryHour> al_planetaryHours(const QDateTime &from, const QDateTime &to);
-//ASTROLIB_EXPORT AL::PlanetaryHour al_planetaryHour(const QDateTime &dateTime);
+  // calculate planetary hours
+  ASTROLIB_EXPORT QList<AL::PlanetaryHour> planetaryHours(const QDateTime &from, const QDateTime &to);
+  ASTROLIB_EXPORT AL::PlanetaryHour planetaryHour(const QDateTime &dateTime);
 
-// return position of every availiable planet/etc in zodiac.
-//ASTROLIB_EXPORT QMap<AL::planets_t,AL::PlanetPosition> al_zodiacPositions(const QDateTime &dateTime);
+  // return position of every availiable planet/etc in zodiac.
+  ASTROLIB_EXPORT QMap<AL::planets_t,AL::PlanetPosition> zodiacPositions(const QDateTime &dateTime);
 
+  // return sunrise/set for given date range
   ASTROLIB_EXPORT QPair<QDateTime, QDateTime> riseSet(const QDate& date);
   ASTROLIB_EXPORT QList<QPair<QDateTime, QDateTime>> riseSet(const QDate& from, const QDate& to);
 
-// internal functions/vars
+// internal functions/vars (NOT exported)
   // return output as list of lines, no processing done.
   QStringList astrolog_getVoids(const QDate &day);
-
+  QStringList astrolog_getChart(const QDateTime &dt);
   
 }
 
